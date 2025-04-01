@@ -18,34 +18,6 @@ def load_csv(file):
     except Exception as e:
         st.error(f"Erro ao carregar o arquivo: {e}")
         return None
-    
-def calculate_statistics(df, column):
-    if column in df.columns:
-        mean = df[column].mean()
-        median = df[column].median()
-        std_dev = df[column].std()
-        return mean, median, std_dev
-    else:
-        st.error("Coluna não encontrada no dataframe.")
-        return None, None, None
-
-def plot_line_chart(df, column):
-    if column in df.columns:
-        st.subheader(f"Gráfico de Linha da coluna: {column}")
-        st.line_chart(df[column])
-    else:
-        st.error("Coluna não encontrada para plotar o gráfico de linha.")
-def plot_histogram(df, column):
-    if column in df.columns:
-        st.subheader(f"Histograma da coluna: {column}")
-        plt.figure(figsize=(10, 5))
-        plt.hist(df[column], bins=30, color='blue', alpha=0.7)
-        plt.title(f'Histograma de {column}')
-        plt.xlabel(column)
-        plt.ylabel('Frequência')
-        st.pyplot(plt)
-    else:
-        st.error("Coluna não encontrada para plotar o histograma.")
 
 def main():
     st.title("Dashboard de Análise de Dados")
@@ -56,22 +28,34 @@ def main():
     if uploaded_file is not None:
         df = load_csv(uploaded_file)
         if df is not None:
-            st.write("Dados do arquivo CSV:")
+            st.subheader("Prévia dos Dados")
             st.dataframe(df)
-            numeric_columns = df.select_dtypes(include=['float64', 'int64']).columns
-            if len(numeric_columns) > 0:
-                selected_column = st.selectbox("Selecione uma coluna numérica:", numeric_columns)
-                if st.button("Calcular Estatísticas"):
-                    mean, median, std_dev = calculate_statistics(df, selected_column)
-                    if mean is not None:
-                        st.write(f"Média: {mean}")
-                        st.write(f"Mediana: {median}")
-                        st.write(f"Desvio Padrão: {std_dev}")
-                        if selected_column:
-                            plot_line_chart(df, selected_column)
-                            plot_histogram(df, selected_column)
-            else:
-                st.warning("Nenhuma coluna numérica encontrada.")
+
+            # Filtros interativos
+            st.subheader("Filtros Interativos")
+
+            # Filtro para colunas categóricas
+            categorical_columns = df.select_dtypes(include=['object', 'category']).columns
+            if not categorical_columns.empty:
+                selected_category = st.multiselect("Filtrar por colunas categóricas", categorical_columns)
+                for col in selected_category:
+                    unique_values = df[col].unique()
+                    selected_values = st.multiselect(f"Valores para {col}", unique_values)
+                    if selected_values:
+                        df = df[df[col].isin(selected_values)]
+
+            # Filtro para colunas numéricas
+            numerical_columns = df.select_dtypes(include=['number']).columns
+            if not numerical_columns.empty:
+                selected_numeric = st.multiselect("Filtrar por colunas numéricas", numerical_columns)
+                for col in selected_numeric:
+                    min_val, max_val = float(df[col].min()), float(df[col].max())
+                    range_values = st.slider(f"Faixa de valores para {col}", min_val, max_val, (min_val, max_val))
+                    df = df[(df[col] >= range_values[0]) & (df[col] <= range_values[1])]
+
+            # Exibir dados filtrados
+            st.subheader("Dados Filtrados")
+            st.dataframe(df)
         else:
             st.error("Não foi possível carregar os dados.")
     else:
