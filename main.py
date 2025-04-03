@@ -1,19 +1,21 @@
 import streamlit as st
-import pandas as pd
 
-dados = pd.DataFrame({
-    'latitude': [-16.678452742502262, -15.794885778568375, -16.629487655137247, -16.243308593950594],
-    'longitude': [-49.244837047656375,  -47.89177851706749, -49.21428602834838, -48.964223858007955],
-    'categoria': ['Universidade', 'Capital', 'Aeroporto', 'Base Militar']
-})
+with st.form("formulario"):
+    st.write("Preencha o formulário abaixo:")
+    nome = st.text_input("Nome", key="nome")
+    idade = st.number_input("Idade", min_value=0, max_value=120, step=1, key="idade")
+    cores = st.multiselect("Preferência de cor", ["Vermelho", "Azul", "Verde", "Amarelo", "Preto", "Branco"], key="cores")
 
-categorias = ['Todos'] + list(dados['categoria'].unique())
+    submitted = st.form_submit_button("Enviar")
+    clear = st.form_submit_button("Limpar", on_click=lambda: clear())
 
-filtroCategorias = st.selectbox('Selecione uma categoria: ', categorias)
+    if submitted:
+        if nome and cores:
+            st.success(f"Olá, {nome}, com {idade} anos, você gosta de {', '.join(cores)}!")
+        else:
+            st.error("Por favor, preencha todos os campos corretamente.")
 
-if filtroCategorias == 'Todos':
-    dadosFiltrados = dados
-else:
-    dadosFiltrados = dados[dados['categoria'] == filtroCategorias]
-
-st.map(dadosFiltrados)
+def clear():
+        st.session_state["nome"] = ""
+        st.session_state["idade"] = 0
+        st.session_state["cores"] = []
