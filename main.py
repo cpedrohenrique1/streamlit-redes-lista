@@ -1,15 +1,19 @@
 import streamlit as st
 import pandas as pd
 
-st.title("Simulador de Investimento")
-valorInicial = st.number_input("Valor Inicial do Investimento:", min_value=0.0, value=1000.0, step=100.0)
-taxaJuros = st.slider("Taxa de Juros Anual (%):", min_value=0.0, max_value=20.0, value=5.0, step=0.1)
-periodoAnos = st.selectbox("Período (em anos):", options=list(range(1, 31)), index=4)
+dados = pd.DataFrame({
+    'latitude': [-16.678452742502262, -15.794885778568375, -16.629487655137247, -16.243308593950594],
+    'longitude': [-49.244837047656375,  -47.89177851706749, -49.21428602834838, -48.964223858007955],
+    'categoria': ['Universidade', 'Capital', 'Aeroporto', 'Base Militar']
+})
 
-anos = list(range(1, periodoAnos + 1))
-montantes = [valorInicial * (1 + taxaJuros / 100) ** ano for ano in anos]
+categorias = ['Todos'] + list(dados['categoria'].unique())
 
-st.subheader("Crescimento do Investimento")
-st.line_chart(pd.DataFrame({"Ano": anos, "Montante (R$)": montantes}).set_index("Ano"))
+filtroCategorias = st.selectbox('Selecione uma categoria: ', categorias)
 
-st.write(f"Montante final após {periodoAnos} anos: R$ {montantes[-1]:,.2f}")
+if filtroCategorias == 'Todos':
+    dadosFiltrados = dados
+else:
+    dadosFiltrados = dados[dados['categoria'] == filtroCategorias]
+
+st.map(dadosFiltrados)
