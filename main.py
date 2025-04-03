@@ -1,47 +1,15 @@
 import streamlit as st
 import pandas as pd
 
-def loadCsv(file):
-    try:
-        df = pd.read_csv(file)
-        return df
-    except Exception as e:
-        st.error(f"Erro ao carregar o arquivo: {e}")
-        return None
+st.title("Simulador de Investimento")
+valorInicial = st.number_input("Valor Inicial do Investimento:", min_value=0.0, value=1000.0, step=100.0)
+taxaJuros = st.slider("Taxa de Juros Anual (%):", min_value=0.0, max_value=20.0, value=5.0, step=0.1)
+periodoAnos = st.selectbox("Período (em anos):", options=list(range(1, 31)), index=4)
 
-st.title("Dashboard de Análise de Dados")
-st.write("Faça o upload de um arquivo CSV para visualizar os dados.")
+anos = list(range(1, periodoAnos + 1))
+montantes = [valorInicial * (1 + taxaJuros / 100) ** ano for ano in anos]
 
-uploadedFile = st.file_uploader("Escolha um arquivo CSV", type="csv")
+st.subheader("Crescimento do Investimento")
+st.line_chart(pd.DataFrame({"Ano": anos, "Montante (R$)": montantes}).set_index("Ano"))
 
-if uploadedFile is not None:
-    df = loadCsv(uploadedFile)
-    if df is not None:
-        st.subheader("Prévia dos Dados")
-        st.dataframe(df)
-
-        st.subheader("Filtros Interativos")
-
-        colunasCategoricas = df.select_dtypes(include=['object', 'category']).columns
-        if not colunasCategoricas.empty:
-            colunaSelecionada = st.multiselect("Filtrar por colunas categóricas", colunasCategoricas)
-            for col in colunaSelecionada:
-                valoresUnicos = df[col].unique()
-                valoresSelecionados = st.multiselect(f"Valores para {col}", valoresUnicos)
-                if valoresSelecionados:
-                    df = df[df[col].isin(valoresSelecionados)]
-
-        colunasNumericas = df.select_dtypes(include=['number']).columns
-        if not colunasNumericas.empty:
-            colunaNumericaSelecionada = st.multiselect("Filtrar por colunas numéricas", colunasNumericas)
-            for col in colunaNumericaSelecionada:
-                min_val, max_val = float(df[col].min()), float(df[col].max())
-                range_values = st.slider(f"Faixa de valores para {col}", min_val, max_val, (min_val, max_val))
-                df = df[(df[col] >= range_values[0]) & (df[col] <= range_values[1])]
-
-        st.subheader("Dados Filtrados")
-        st.dataframe(df)
-    else:
-        st.error("Não foi possível carregar os dados.")
-else:
-    st.info("Aguardando upload de arquivo CSV.")
+st.write(f"Montante final após {periodoAnos} anos: R$ {montantes[-1]:,.2f}")
