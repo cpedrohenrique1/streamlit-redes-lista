@@ -1,24 +1,30 @@
 import streamlit as st
-from wordcloud import WordCloud
-from collections import Counter
 import pandas as pd
+import altair as alt
 
-st.title("Análise de Texto")
-texto = st.text_area("Insira o texto aqui:")
+st.title("Sistema de Recomendação Simples")
 
-if texto:
-    qtdPalavras = len(texto.split())
-    qtdCaracteres = len(texto)
-    st.write(f"**Quantidade de palavras:** {qtdPalavras}")
-    st.write(f"**Quantidade de caracteres:** {qtdCaracteres}")
+preferencias = st.radio(
+    "Escolha seu tipo de comida favorito:",
+    ("Italiana", "Japonesa", "Brasileira", "Mexicana")
+)
 
-    if st.button("Gerar Nuvem de Palavras"):
-        wordcloud = WordCloud(background_color="white").generate(texto)
-        st.image(wordcloud.to_image(), caption="Nuvem de palavras",use_container_width=True)
+recomendacoes = {
+    "Italiana": [("Pizza", 90), ("Lasanha", 80), ("Risoto", 70)],
+    "Japonesa": [("Sushi", 95), ("Tempurá", 85), ("Ramen", 75)],
+    "Brasileira": [("Feijoada", 90), ("Churrasco", 85), ("Galinhada", 80)],
+    "Mexicana": [("Tacos", 88), ("Burritos", 82), ("Nachos", 78)]
+}
 
-    palavras = texto.split()
-    contagem = Counter(palavras)
-    palavras_comuns = contagem.most_common(5)
-    df_palavras = pd.DataFrame(palavras_comuns, columns=["Palavra", "Frequência"])
-    st.write("**Top 5 palavras mais frequentes:**")
-    st.dataframe(df_palavras)
+st.subheader("Recomendações para você:")
+for item, score in recomendacoes[preferencias]:
+    st.write(f"{item} - Pontuação: {score}")
+
+df = pd.DataFrame(recomendacoes[preferencias], columns=["Prato", "Pontuação"])
+chart = alt.Chart(df).mark_bar().encode(
+    x="Prato",
+    y="Pontuação",
+    color="Prato"
+).properties(title="Pontuação das Recomendações")
+
+st.altair_chart(chart, use_container_width=True)
