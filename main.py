@@ -1,21 +1,26 @@
 import streamlit as st
+from wordcloud import WordCloud
+from collections import Counter
+import pandas as pd
+from io import BytesIO
+from PIL import Image
 
-with st.form("formulario"):
-    st.write("Preencha o formulário abaixo:")
-    nome = st.text_input("Nome", key="nome")
-    idade = st.number_input("Idade", min_value=0, max_value=120, step=1, key="idade")
-    cores = st.multiselect("Preferência de cor", ["Vermelho", "Azul", "Verde", "Amarelo", "Preto", "Branco"], key="cores")
+st.title("Análise de Texto")
+texto = st.text_area("Insira o texto aqui:")
 
-    submitted = st.form_submit_button("Enviar")
-    clear = st.form_submit_button("Limpar", on_click=lambda: clear())
+if texto:
+    qtdPalavras = len(texto.split())
+    qtdCaracteres = len(texto)
+    st.write(f"**Quantidade de palavras:** {qtdPalavras}")
+    st.write(f"**Quantidade de caracteres:** {qtdCaracteres}")
 
-    if submitted:
-        if nome and cores:
-            st.success(f"Olá, {nome}, com {idade} anos, você gosta de {', '.join(cores)}!")
-        else:
-            st.error("Por favor, preencha todos os campos corretamente.")
+    if st.button("Gerar Nuvem de Palavras"):
+        wordcloud = WordCloud(background_color="white").generate(texto)
+        st.image(wordcloud.to_image(), caption="Nuvem de palavras",use_container_width=True)
 
-def clear():
-        st.session_state["nome"] = ""
-        st.session_state["idade"] = 0
-        st.session_state["cores"] = []
+    palavras = texto.split()
+    contagem = Counter(palavras)
+    palavras_comuns = contagem.most_common(5)
+    df_palavras = pd.DataFrame(palavras_comuns, columns=["Palavra", "Frequência"])
+    st.write("**Top 5 palavras mais frequentes:**")
+    st.dataframe(df_palavras)
