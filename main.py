@@ -2,8 +2,6 @@ import streamlit as st
 from wordcloud import WordCloud
 from collections import Counter
 import pandas as pd
-from io import BytesIO
-from PIL import Image
 
 st.title("Análise de Texto")
 texto = st.text_area("Insira o texto aqui:")
