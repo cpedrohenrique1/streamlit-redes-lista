@@ -1,3 +1,5 @@
+api_key = "2433|7aALO2tTwWBW2yosQKOzjeJtaXUOPJvIM7ULEyd3"
+openWeather_api_key = "7bb167b8d8e16d4acb12c02cd41c0cb6"
 headers = {
     "Authorization": f"Bearer {api_key}"
 }
