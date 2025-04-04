@@ -1,65 +1,57 @@
+headers = {
+    "Authorization": f"Bearer {api_key}"
+}
 import streamlit as st
+import requests
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import plotly.express as px
 
-if 'data' not in st.session_state:
-    st.session_state['data'] = None
+st.title("Consulta de Países com RestfulCountries")
 
-st.sidebar.title("Navegação")
-page = st.sidebar.radio("Ir para", ["Upload de Dados", "Análise Estatística", "Gráficos Interativos"])
+country_name = st.text_input("Digite o nome do país (ex: Nigeria, Brazil, Canada):")
 
-if page == "Upload de Dados":
-    st.title("Upload e Visualização de Dados")
-
-    uploaded_file = st.file_uploader("Faça upload de um arquivo CSV", type=["csv"])
-    if uploaded_file:
-        data = pd.read_csv(uploaded_file)
-        st.session_state['data'] = data
-        st.success("Arquivo carregado")
-        st.dataframe(data)
-
-elif page == "Análise Estatística":
-    st.title("Análise Estatística dos Dados")
-
-    if st.session_state['data'] is not None:
-        df = st.session_state['data']
-
-        @st.cache_data
-        def get_statistics(data):
-            return data.describe()
-
-        st.subheader("Resumo Estatístico")
-        st.write(get_statistics(df))
-
-        st.subheader("Informações Gerais")
-        st.write(df.info())
+def get_country_data(name):
+    url = f"https://restfulcountries.com/api/v1/countries/{name}"
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json().get("data")
     else:
-        st.warning("Por favor, carregue um arquivo na página de upload.")
-
-elif page == "Gráficos Interativos":
-    st.title("Gráficos Interativos com Plotly e Seaborn")
-
-    if st.session_state['data'] is not None:
-        df = st.session_state['data']
-        numeric_cols = df.select_dtypes(include='number').columns.tolist()
-
-        if len(numeric_cols) >= 2:
-            x_axis = st.selectbox("Selecione o eixo X", numeric_cols, index=0)
-            y_axis = st.selectbox("Selecione o eixo Y", numeric_cols, index=1)
-
-            st.subheader("Gráfico de Dispersão")
-            fig = px.scatter(df, x=x_axis, y=y_axis, title=f'{y_axis} vs {x_axis}')
-            st.plotly_chart(fig, use_container_width=True)
-
-            st.subheader("Histograma")
-            col = st.selectbox("Selecione uma coluna para histograma", numeric_cols)
-            fig2, ax = plt.subplots()
-            sns.histplot(df[col], kde=True, ax=ax)
-            st.pyplot(fig2)
-
-        else:
-            st.warning("O arquivo precisa ter pelo menos duas colunas numéricas.")
+        return None
+def get_weather_data(city):
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={openWeather_api_key}&units=metric"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
     else:
-        st.warning("Por favor, carregue um arquivo na página de upload.")
+        return None
+
+if country_name:
+    data = get_country_data(country_name)
+    clima = get_weather_data(data['capital'])
+
+    if data and clima:
+        st.success(f"✅ Dados encontrados para: {data['name']}")
+
+        st.image(data['href']['flag'], width=200, caption=f"Bandeira de {data['name']}")
+        st.subheader("📋 Informações Gerais")
+        st.subheader("🌤️ Clima Atual")
+        st.markdown(f"**Temperatura:** {clima['main']['temp']} C")
+        st.markdown(f"**Umidade:** {clima['main']['humidity']}%")
+        st.markdown(f"**Descrição:** {clima['weather'][0]['description']}")
+        st.image(f"http://openweathermap.org/img/wn/{clima['weather'][0]['icon']}@2x.png", width=100)
+        if "coord" in clima:
+            st.subheader("🗺️ Localização no Mapa")
+            st.map(pd.DataFrame([{
+            "lat": clima["coord"]["lat"],
+            "lon": clima["coord"]["lon"]
+            }]))
+        st.markdown(f"**Nome completo:** {data['full_name']}")
+        st.markdown(f"**Capital:** {data['capital']}")
+        st.markdown(f"**Continente:** {data['continent']}")
+        st.markdown(f"**População:** {data['population']}")
+        st.markdown(f"**Tamanho:** {data['size']}")
+        st.markdown(f"**Moeda:** {data['currency']}")
+        st.markdown(f"**Código telefônico:** +{data['phone_code']}")
+    else:
+        st.error("País não encontrado ou chave de API incorreta.")
+elif country_name:
+    st.warning("Por favor, insira o nome de um país para buscar informações.")
