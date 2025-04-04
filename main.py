@@ -1,30 +1,35 @@
 import streamlit as st
-import pandas as pd
-import altair as alt
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
 
-st.title("Sistema de Recomendação Simples")
+st.title("Previsão com Regressão Linear")
 
-preferencias = st.radio(
-    "Escolha seu tipo de comida favorito:",
-    ("Italiana", "Japonesa", "Brasileira", "Mexicana")
-)
+horas_estudo = st.slider("Horas de Estudo", min_value=0.0, max_value=10.0, step=0.5, value=5.0)
+nota_anterior = st.slider("Nota Anterior", min_value=0.0, max_value=10.0, step=0.1, value=5.0)
 
-recomendacoes = {
-    "Italiana": [("Pizza", 90), ("Lasanha", 80), ("Risoto", 70)],
-    "Japonesa": [("Sushi", 95), ("Tempurá", 85), ("Ramen", 75)],
-    "Brasileira": [("Feijoada", 90), ("Churrasco", 85), ("Galinhada", 80)],
-    "Mexicana": [("Tacos", 88), ("Burritos", 82), ("Nachos", 78)]
-}
+np.random.seed()
+X_train = np.random.uniform(0, 10, size=(100, 2))
+y_train = 0.5 * X_train[:, 0] + 0.5 * X_train[:, 1] + np.random.normal(0, 1, 100)
 
-st.subheader("Recomendações para você:")
-for item, score in recomendacoes[preferencias]:
-    st.write(f"{item} - Pontuação: {score}")
+modelo = LinearRegression()
+modelo.fit(X_train, y_train)
 
-df = pd.DataFrame(recomendacoes[preferencias], columns=["Prato", "Pontuação"])
-chart = alt.Chart(df).mark_bar().encode(
-    x="Prato",
-    y="Pontuação",
-    color="Prato"
-).properties(title="Pontuação das Recomendações")
+entrada_usuario = np.array([[horas_estudo, nota_anterior]])
+previsao = modelo.predict(entrada_usuario)[0]
 
-st.altair_chart(chart, use_container_width=True)
+st.subheader("Resultado da Previsão")
+st.write(f"A previsão da nota final é: **{previsao:.2f}**")
+
+fig, ax = plt.subplots()
+
+ax.scatter(X_train[:, 0], y_train, color='blue', alpha=0.5, label='Dados de Treinamento')
+
+ax.scatter(horas_estudo, previsao, color='red', s=100, label='Previsão do Usuário')
+
+ax.set_xlabel("Horas de Estudo")
+ax.set_ylabel("Nota Final")
+ax.set_title("Comparação: Dados de Treinamento vs. Previsão")
+ax.legend()
+
+st.pyplot(fig)
