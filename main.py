@@ -1,35 +1,65 @@
 import streamlit as st
-import numpy as np
+import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
+import plotly.express as px
 
-st.title("Previsão com Regressão Linear")
+if 'data' not in st.session_state:
+    st.session_state['data'] = None
 
-horas_estudo = st.slider("Horas de Estudo", min_value=0.0, max_value=10.0, step=0.5, value=5.0)
-nota_anterior = st.slider("Nota Anterior", min_value=0.0, max_value=10.0, step=0.1, value=5.0)
+st.sidebar.title("Navegação")
+page = st.sidebar.radio("Ir para", ["Upload de Dados", "Análise Estatística", "Gráficos Interativos"])
 
-np.random.seed()
-X_train = np.random.uniform(0, 10, size=(100, 2))
-y_train = 0.5 * X_train[:, 0] + 0.5 * X_train[:, 1] + np.random.normal(0, 1, 100)
+if page == "Upload de Dados":
+    st.title("Upload e Visualização de Dados")
 
-modelo = LinearRegression()
-modelo.fit(X_train, y_train)
+    uploaded_file = st.file_uploader("Faça upload de um arquivo CSV", type=["csv"])
+    if uploaded_file:
+        data = pd.read_csv(uploaded_file)
+        st.session_state['data'] = data
+        st.success("Arquivo carregado")
+        st.dataframe(data)
 
-entrada_usuario = np.array([[horas_estudo, nota_anterior]])
-previsao = modelo.predict(entrada_usuario)[0]
+elif page == "Análise Estatística":
+    st.title("Análise Estatística dos Dados")
 
-st.subheader("Resultado da Previsão")
-st.write(f"A previsão da nota final é: **{previsao:.2f}**")
+    if st.session_state['data'] is not None:
+        df = st.session_state['data']
 
-fig, ax = plt.subplots()
+        @st.cache_data
+        def get_statistics(data):
+            return data.describe()
 
-ax.scatter(X_train[:, 0], y_train, color='blue', alpha=0.5, label='Dados de Treinamento')
+        st.subheader("Resumo Estatístico")
+        st.write(get_statistics(df))
 
-ax.scatter(horas_estudo, previsao, color='red', s=100, label='Previsão do Usuário')
+        st.subheader("Informações Gerais")
+        st.write(df.info())
+    else:
+        st.warning("Por favor, carregue um arquivo na página de upload.")
 
-ax.set_xlabel("Horas de Estudo")
-ax.set_ylabel("Nota Final")
-ax.set_title("Comparação: Dados de Treinamento vs. Previsão")
-ax.legend()
+elif page == "Gráficos Interativos":
+    st.title("Gráficos Interativos com Plotly e Seaborn")
 
-st.pyplot(fig)
+    if st.session_state['data'] is not None:
+        df = st.session_state['data']
+        numeric_cols = df.select_dtypes(include='number').columns.tolist()
+
+        if len(numeric_cols) >= 2:
+            x_axis = st.selectbox("Selecione o eixo X", numeric_cols, index=0)
+            y_axis = st.selectbox("Selecione o eixo Y", numeric_cols, index=1)
+
+            st.subheader("Gráfico de Dispersão")
+            fig = px.scatter(df, x=x_axis, y=y_axis, title=f'{y_axis} vs {x_axis}')
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.subheader("Histograma")
+            col = st.selectbox("Selecione uma coluna para histograma", numeric_cols)
+            fig2, ax = plt.subplots()
+            sns.histplot(df[col], kde=True, ax=ax)
+            st.pyplot(fig2)
+
+        else:
+            st.warning("O arquivo precisa ter pelo menos duas colunas numéricas.")
+    else:
+        st.warning("Por favor, carregue um arquivo na página de upload.")
